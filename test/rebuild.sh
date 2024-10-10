@@ -467,6 +467,7 @@ lb config \
 	--archive-areas "main ${FIRMWARE_ARCHIVE_AREA}" \
 	--iso-volume "${ISO_VOLUME}" \
 	--architecture ${ARCHITECTURE} \
+	--initramfs dracut-live \
 	${ARCHITECTURE_OPTIONS} \
 	${GENERATE_SOURCE} \
 	2>&1 | tee $LB_OUTPUT
@@ -476,7 +477,7 @@ lb config \
 sed -i -e '/^APT_OPTIONS=/s/--yes/--yes -o Acquire::Check-Valid-Until=false/' config/common
 
 if [ ! -z "${PACKAGES}" ]; then
-	echo "${PACKAGES}" >config/package-lists/desktop.list.chroot
+	echo "${PACKAGES} rsync" >config/package-lists/desktop.list.chroot
 fi
 
 # Set meta information about the image
