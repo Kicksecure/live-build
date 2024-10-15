@@ -30,6 +30,9 @@ Setup_clean_exit
 # Restoring cached live OS chroot from cache
 lb chroot_cache restore "${@}"
 
+# Enable use of a local package repo if it is present
+lb chroot_local-repos configure "${@}"
+
 # Configuring chroot
 lb chroot_prep install all mode-archives-chroot "${@}"
 
@@ -56,6 +59,7 @@ lb chroot_interactive "${@}"
 Chroot chroot "dpkg-query -W" > chroot.packages.live
 
 # Deconfiguring chroot
+lb chroot_local-repos deconfigure "${@}"
 lb chroot_prep remove all mode-archives-chroot "${@}"
 
 # Saving live OS chroot to cache
