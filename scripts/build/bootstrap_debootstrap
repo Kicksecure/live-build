@@ -15,16 +15,25 @@ set -e
 [ -e "${LIVE_BUILD}/scripts/build.sh" ] && . "${LIVE_BUILD}/scripts/build.sh" || . /usr/lib/live/build.sh
 
 # Setting static variables
-DESCRIPTION="Bootstrap a Debian system with debootstrap(8)"
+DESCRIPTION="Bootstrap a Debian system with debootstrap(8) or mmdebstrap(1)"
 USAGE="${PROGRAM} [--force]"
 
 # Processing arguments and configuration files
 Init_config_data "${@}"
 
-if ! command -v debootstrap >/dev/null
+if [ "${DEBOOTSTRAP_ENGINE}" = 'debootstrap' ]
 then
-	Echo_error "debootstrap - command not found"
-	exit 1
+	if ! command -v debootstrap >/dev/null
+	then
+		Echo_error "debootstrap - command not found"
+		exit 1
+	fi
+else
+	if ! command -v mmdebstrap >/dev/null
+	then
+		Echo_error "mmdebstrap - command not found"
+		exit 1
+	fi
 fi
 
 Echo_message "Begin bootstrapping system..."
@@ -75,26 +84,37 @@ fi
 
 if [ "${LB_CACHE_PACKAGES}" = "true" ]
 then
-	if ls cache/packages.bootstrap/*.deb > /dev/null 2>&1
+	if [ "${DEBOOTSTRAP_ENGINE}" = 'debootstrap' ]
 	then
-		mkdir -p chroot/var/cache/apt/archives
-		cp cache/packages.bootstrap/*.deb chroot/var/cache/apt/archives
+		if ls cache/packages.bootstrap/*.deb > /dev/null 2>&1
+		then
+			mkdir -p chroot/var/cache/apt/archives
+			cp cache/packages.bootstrap/*.deb chroot/var/cache/apt/archives
+		fi
+
+		Print_breakage
+
+		Echo_message "Running debootstrap (download-only)..."
+		debootstrap ${DEBOOTSTRAP_OPTIONS} --download-only "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
+
+		# Removing old cache
+		rm -f cache/packages.bootstrap/*.deb
+
+		# Saving new cache
+		mkdir -p cache/packages.bootstrap
+		cp chroot/var/cache/apt/archives/*.deb cache/packages.bootstrap
+	else
+		Echo_message "Using mmdebstrap, skipping caching of bootstrap packages."
 	fi
-
-	Print_breakage
-	Echo_message "Running debootstrap (download-only)..."
-	debootstrap ${DEBOOTSTRAP_OPTIONS} --download-only "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
-
-	# Removing old cache
-	rm -f cache/packages.bootstrap/*.deb
-
-	# Saving new cache
-	mkdir -p cache/packages.bootstrap
-	cp chroot/var/cache/apt/archives/*.deb cache/packages.bootstrap
 fi
 
 Print_breakage
-Echo_message "Running debootstrap..."
+if [ "${DEBOOTSTRAP_ENGINE}" = 'debootstrap' ]
+then
+	Echo_message "Running debootstrap..."
+else
+	Echo_message "Running mmdebstrap..."
+fi
 
 # Run appropriate bootstrap, i.e. foreign or regular bootstrap
 if [ -n "${LB_BOOTSTRAP_QEMU_ARCHITECTURE}" ]; then
@@ -105,12 +125,22 @@ if [ -n "${LB_BOOTSTRAP_QEMU_ARCHITECTURE}" ]; then
 	fi
 
 	Echo_message "Bootstrap will be foreign"
-	debootstrap ${DEBOOTSTRAP_OPTIONS} --foreign "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
+	if [ "${DEBOOTSTRAP_ENGINE}" = 'debootstrap' ]
+	then
+		debootstrap ${DEBOOTSTRAP_OPTIONS} --foreign "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
 
-	Echo_message "Running debootstrap second stage under QEMU"
-	Chroot chroot /bin/sh /debootstrap/debootstrap --second-stage ${FOREIGN_DEBOOTSTRAP_OPTIONS}
+		Echo_message "Running debootstrap second stage under QEMU"
+		Chroot chroot /bin/sh /debootstrap/debootstrap --second-stage ${FOREIGN_DEBOOTSTRAP_OPTIONS}
+	else
+		mmdebstrap ${DEBOOTSTRAP_OPTIONS} "${LB_PARENT_DISTRIGBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}"
+	fi
 else
-	debootstrap ${DEBOOTSTRAP_OPTIONS} "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
+	if [ "${DEBOOTSTRAP_ENGINE}" = 'debootstrap' ]
+	then
+		debootstrap ${DEBOOTSTRAP_OPTIONS} "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}" ${DEBOOTSTRAP_SCRIPT}
+	else
+		mmdebstrap ${DEBOOTSTRAP_OPTIONS} "${LB_PARENT_DISTRIBUTION_CHROOT}" chroot "${LB_PARENT_MIRROR_BOOTSTRAP}"
+	fi
 fi
 
 # If there's an os-release file, copy it to /etc/ and add some extra fields that identify the live image

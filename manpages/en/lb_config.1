@@ -92,6 +92,8 @@
 .br
 	[\fB\-\-debian\-installer\-preseedfile\fR \fIFILE\fR|\fIURL\fR]
 .br
+	[\fB\-\-debootstrap\-engine\fR \fIdebootstrap\fR|\fImmdebstrap\fR]
+.br
 	[\fB\-\-debootstrap\-options\fR \fIOPTION\fR|"\fIOPTIONS\fR"]
 .br
 	[\fB\-\-debootstrap\-script\fR \fISCRIPT\fR]
@@ -324,6 +326,8 @@ defines the distribution where the debian\-installer files should be taken out f
 defines whether the graphical version of the debian\-installer should be provided alongside the text based one. This defaults to true.
 .IP "\fB\-\-debian\-installer\-preseedfile\fR \fIFILE\fR|\fIURL\fR" 4
 sets the filename or URL for an optionally used and included preseeding file for debian\-installer. If config/binary_debian\-installer/preseed.cfg exists, it will be used by default. 
+.IP "\fB\-\-debootstrap\-engine\fR \fIdebootstrap\fR|\fImmdebstrap\fR" 4
+sets the debootstrap implementation to use. Currently debootstrap and mmdebstrap are supported.
 .IP "\fB\-\-debootstrap\-options\fR \fIOPTION\fR|""\fIOPTIONS\fR""" 4
 passes the given options to debootstrap when setting up the base system.
 .IP "\fB\-\-debootstrap\-script\fR \fISCRIPT\fR" 4

@@ -489,6 +489,8 @@ Prepare_config ()
 	LB_BOOTSTRAP_QEMU_ARCHITECTURE="${LB_BOOTSTRAP_QEMU_ARCHITECTURE:-}"
 	LB_BOOTSTRAP_QEMU_EXCLUDE="${LB_BOOTSTRAP_QEMU_EXCLUDE:-}"
 	LB_BOOTSTRAP_QEMU_STATIC="${LB_BOOTSTRAP_QEMU_STATIC:-}"
+
+	DEBOOTSTRAP_ENGINE="${DEBOOTSTRAP_ENGINE:-debootstrap}"
 }
 
 Validate_config ()
@@ -768,6 +770,11 @@ Validate_config_permitted_values ()
 			exit 1
 		fi
 	fi
+
+	if ! In_list "${DEBOOTSTRAP_ENGINE}" debootstrap mmdebstrap; then
+		Echo_error "You have specified an invalid value for DEBOOTSTRAP_ENGINE (--debootstrap-engine)."
+		exit 1;
+	fi
 }
 
 # Check option combinations and other extra stuff
@@ -796,6 +803,18 @@ Validate_config_dependencies ()
 	if In_list "grub-pc" ${LB_BOOTLOADERS} || In_list "grub-efi" ${LB_BOOTLOADERS} || In_list "grub-legacy" ${LB_BOOTLOADERS}; then
 		if In_list "${LB_IMAGE_TYPE}" hdd netboot; then
 			Echo_error "You have selected an invalid combination of bootloaders and live image type; the grub-* bootloaders are not compatible with hdd and netboot types."
+			exit 1
+		fi
+	fi
+
+	if [ "${DEBOOTSTRAP_ENGINE}" = 'mmdebstrap' ]; then
+		if [ -n "${DEBOOTSTRAP_SCRIPT}" ]; then
+			Echo_error "mmdebstrap is not compatible with a non-empty DEBOOTSTRAP_SCRIPT option (--debootstrap-script)."
+			exit 1
+		fi
+
+		if [ "${LB_APT_SECURE}" = 'false' ]; then
+			Echo_error "mmdebstrap is not compatible with an LB_APT_SECURE (--apt-secure) option that is set to 'false'."
 			exit 1
 		fi
 	fi
