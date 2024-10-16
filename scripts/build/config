@@ -115,6 +115,7 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [--parent-mirror-chroot URL]\n\
 \t    [--parent-mirror-chroot-security URL]\n\
 \t    [--parent-mirror-debian-installer URL]\n\
+\t    [--proposed-updates true|false]\n\
 \t    [--quiet]\n\
 \t    [--security true|false]\n\
 \t    [--source true|false]\n\
@@ -171,6 +172,7 @@ Local_arguments ()
 		parent-mirror-binary-security:,parent-mirror-bootstrap:,
 		parent-mirror-chroot:,parent-mirror-chroot-security:,
 		parent-mirror-debian-installer:,
+		proposed-updates:,
 		quiet,
 		security:,source:,source-images:,swap-file-path:,swap-file-size:,system:,
 		tasksel:,
@@ -781,6 +783,11 @@ Local_arguments ()
 				shift 2
 				;;
 
+			--proposed-updates)
+				LB_PROPOSED_UPDATES="${2}"
+				shift 2
+				;;
+
 			--security)
 				LB_SECURITY="${2}"
 				shift 2
@@ -1194,6 +1201,9 @@ LB_UPDATES="${LB_UPDATES}"
 
 # Enable backports updates
 LB_BACKPORTS="${LB_BACKPORTS}"
+
+# Enable proposed updates
+LB_PROPOSED_UPDATES="${LB_PROPOSED_UPDATES}"
 
 # Set path to one or more local deb repositories
 LB_LOCALREPOS="${LB_LOCALREPOS}"
