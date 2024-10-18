@@ -60,6 +60,7 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [--debian-installer-distribution daily|CODENAME]\n\
 \t    [--debian-installer-gui true|false]\n\
 \t    [--debian-installer-preseedfile FILE|URL]\n\
+\t    [--debootstrap-engine debootstrap|mmdebstrap]\n\
 \t    [--debootstrap-options OPTION|\"OPTIONS\"]\n\
 \t    [--debootstrap-script SCRIPT]\n\
 \t    [--debug]\n\
@@ -150,7 +151,8 @@ Local_arguments ()
 		chroot-squashfs-compression-type:,clean,color,compression:,conffile:,
 		config:,debconf-frontend:,debconf-priority:,debian-installer:,
 		debian-installer-distribution:,debian-installer-gui:,
-		debian-installer-preseedfile:,debootstrap-options:,debootstrap-script:,
+		debian-installer-preseedfile:,debootstrap-engine:,
+		debootstrap-options:,debootstrap-script:,
 		debug,dm-verity,dm-verity-fec:,dm-verity-sign:,
 		distribution:,distribution-binary:,distribution-chroot:,dump,
 		fdisk:,firmware-binary:,firmware-chroot:,force,
@@ -477,6 +479,11 @@ Local_arguments ()
 
 			--debian-installer-preseedfile)
 				LB_DEBIAN_INSTALLER_PRESEEDFILE="${2}"
+				shift 2
+				;;
+
+			--debootstrap-engine)
+				DEBOOTSTRAP_ENGINE="${2}"
 				shift 2
 				;;
 
@@ -1055,6 +1062,9 @@ APT_OPTIONS="${APT_OPTIONS}"
 
 # Set options to use with aptitude
 APTITUDE_OPTIONS="${APTITUDE_OPTIONS}"
+
+# Set debootstrap implementation to use
+DEBOOTSTRAP_ENGINE="${DEBOOTSTRAP_ENGINE}"
 
 # Set options to use with debootstrap
 DEBOOTSTRAP_OPTIONS="${DEBOOTSTRAP_OPTIONS}"
