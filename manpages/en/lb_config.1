@@ -24,6 +24,8 @@
 .br
 	[\fB\-\-apt\-source\-archives\fR true|false]
 .br
+	[\fB\-\-apt\-update\-options\fR \fIOPTION\fR|"\fIOPTIONS\fR"]
+.br
 	[\fB\-\-aptitude\-options\fR \fIOPTION\fR|"\fIOPTIONS\fR"]
 .br
 	[\fB\-a\fR|\fB\-\-architecture\fR \fIARCHITECTURE\fR]
@@ -258,6 +260,8 @@ defines if apt should install recommended packages automatically. By default, th
 defines if apt should check repository signatures. This is true by default.
 .IP "\fB\-\-apt\-source\-archives\fR true|false" 4
 defines if deb-src entries should be included in the resulting live image's apt sources.list or not, defaults to true.
+.IP "\fB\-\-apt\-update\-options\fR \fIOPTION\fR|""\fIOPTIONS\fR""" 4
+defines the default options that will be appended to 'apt update' calls that are made inside of the chroot during building of the image. Empty by default. Useful if you want to set options such as '\-\-error\-on=any'. Note that this option does not apply to aptitude calls.
 .IP "\fB\-\-aptitude\-options\fR \fIOPTION\fR|""\fIOPTIONS\fR""" 4
 defines the default options that will be appended to every aptitude call that is made inside chroot during building of the image. By default, this is set to '\-\-assume\-yes' to allow non-interactive installation of packages.
 .IP "\fB\-a\fR|\fB\-\-architecture\fR \fIARCHITECTURE\fR" 4

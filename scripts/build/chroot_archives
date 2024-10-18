@@ -259,7 +259,7 @@ case "${_ACTION}" in
 
 			if [ "${LB_APT}" = "aptitude" ] && ! command -v aptitude >/dev/null
 			then
-				Chroot chroot "apt-get ${APT_OPTIONS} update"
+				Chroot chroot "apt-get ${APT_OPTIONS} ${APT_UPDATE_OPTIONS} update"
 				Chroot chroot "apt-get ${APT_OPTIONS} install aptitude"
 			fi
 		else # Get fresh indices
@@ -277,7 +277,7 @@ case "${_ACTION}" in
 			# Installing aptitude
 			if [ "${LB_APT}" = "aptitude" ] && [ ! $(Chroot chroot "which aptitude") ]
 			then
-				Chroot chroot "apt-get ${APT_OPTIONS} update"
+				Chroot chroot "apt-get ${APT_OPTIONS} ${APT_UPDATE_OPTIONS} update"
 				Chroot chroot "apt-get ${APT_OPTIONS} install aptitude"
 			fi
 
