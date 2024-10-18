@@ -12,15 +12,21 @@
 Apt ()
 {
 	local CHROOT="${1}"
-	shift
+	local MODE="${2}"
+	shift 2
 
 	case "${LB_APT}" in
 		apt|apt-get)
-			Chroot ${CHROOT} apt-get ${APT_OPTIONS} "${@}"
+			if [ "${MODE}" = "update" ]
+			then
+				Chroot ${CHROOT} apt-get ${APT_OPTIONS} ${APT_UPDATE_OPTIONS} ${MODE} "${@}"
+			else
+				Chroot ${CHROOT} apt-get ${APT_OPTIONS} ${MODE} "${@}"
+			fi
 			;;
 
 		aptitude)
-			Chroot ${CHROOT} aptitude ${APTITUDE_OPTIONS} "${@}"
+			Chroot ${CHROOT} aptitude ${APTITUDE_OPTIONS} ${MODE} "${@}"
 			;;
 	esac
 }

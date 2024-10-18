@@ -128,7 +128,7 @@ fi
 # Installing aptitude
 if [ "${LB_APT}" = "aptitude" ] && [ ! -x chroot/usr/bin/aptitude ]
 then
-	Chroot chroot "apt-get ${APT_OPTIONS} update"
+	Chroot chroot "apt-get ${APT_OPTIONS} ${APT_UPDATE_OPTIONS} update"
 	Chroot chroot "apt-get ${APT_OPTIONS} install aptitude"
 fi
 
@@ -143,7 +143,7 @@ Apt chroot update
 # Installing keyring packages
 if [ -n "${LB_KEYRING_PACKAGES}" ]
 then
-	Apt chroot "install ${LB_KEYRING_PACKAGES}"
+	Apt chroot install "${LB_KEYRING_PACKAGES}"
 fi
 
 rm -rf chroot/var/cache/apt/*.bin

@@ -24,6 +24,7 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [--apt-recommends true|false]\n\
 \t    [--apt-secure true|false]\n\
 \t    [--apt-source-archives true|false]\n\
+\t    [--apt-update-options OPTION|\"OPTIONS\"]\n\
 \t    [--aptitude-options OPTION|\"OPTIONS\"]\n\
 \t    [-a|--architecture ARCHITECTURE]\n\
 \t    [--archive-areas ARCHIVE_AREA|\"ARCHIVE_AREAS\"]\n\
@@ -137,7 +138,8 @@ Local_arguments ()
 	LONG_OPTIONS="
 		apt:,apt-http-proxy:,apt-indices:,aptitude-options:,
 		apt-options:,apt-pipeline:,apt-recommends:,apt-secure:,
-		apt-source-archives:,architecture:,architectures:,archive-areas:,
+		apt-source-archives:,apt-update-options:,architecture:,
+		architectures:,archive-areas:,
 		backports:,binary-filesystem:,binary-image:,binary-images:,
 		bootappend-install:,bootappend-live:,bootappend-live-failsafe:,
 		bootloader:,bootloaders:,bootstrap-qemu-arch:,bootstrap-qemu-exclude:,
@@ -318,6 +320,11 @@ Local_arguments ()
 
 			--apt-source-archives)
 				LB_APT_SOURCE_ARCHIVES="${2}"
+				shift 2
+				;;
+
+			--apt-update-options)
+				APT_UPDATE_OPTIONS="${2}"
 				shift 2
 				;;
 
@@ -997,6 +1004,9 @@ LB_APT_SECURE="${LB_APT_SECURE}"
 
 # Set apt/aptitude source entries in sources.list
 LB_APT_SOURCE_ARCHIVES="${LB_APT_SOURCE_ARCHIVES}"
+
+# Set options that should only be used during apt updates
+APT_UPDATE_OPTIONS="${APT_UPDATE_OPTIONS}"
 
 # Control cache
 LB_CACHE="${LB_CACHE}"
