@@ -45,7 +45,8 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [--cache-stages STAGE|\"STAGES\"]\n\
 \t    [--checksums md5|sha1|sha224|sha256|sha384|sha512|none]\n\
 \t    [--chroot-filesystem ext2|ext3|ext4|squashfs|jffs2|none]\n\
-\t    [--chroot-localrepos PARAMETER|\"PARAMETERS\"]\n\
+\t    [--chroot-localrepo-locations PARAMETER|\"PARAMETERS\"]\n\
+\t    [--chroot-localrepo-lists PARAMETER|\"PARAMETERS\"]\n\
 \t    [--chroot-squashfs-compression-level LEVEL]\n\
 \t    [--chroot-squashfs-compression-type gzip|lzma|lzo|lz4|xz|zstd]\n\
 \t    [--clean]\n\
@@ -144,7 +145,8 @@ Local_arguments ()
 		bootloader:,bootloaders:,bootstrap-qemu-arch:,bootstrap-qemu-exclude:,
 		bootstrap-qemu-static:,breakpoints,build-with-chroot:,
 		cache:,cache-indices:,cache-packages:,cache-stages:,checksums:,
-		chroot-filesystem:,chroot-localrepos:,chroot-squashfs-compression-level:,
+		chroot-filesystem:,chroot-localrepo-locations:,
+		chroot-localrepo-lists:,chroot-squashfs-compression-level:,
 		chroot-squashfs-compression-type:,clean,color,compression:,conffile:,
 		config:,debconf-frontend:,debconf-priority:,debian-installer:,
 		debian-installer-distribution:,debian-installer-gui:,
@@ -423,8 +425,13 @@ Local_arguments ()
 				shift 2
 				;;
 
-			--chroot-localrepos)
-				LB_LOCALREPOS="${2}"
+			--chroot-localrepo-locations)
+				LB_LOCALREPO_LOCATIONS="${2}"
+				shift 2
+				;;
+
+			--chroot-localrepo-lists)
+				LB_LOCALREPO_LISTS="${2}"
 				shift 2
 				;;
 
@@ -1206,7 +1213,10 @@ LB_BACKPORTS="${LB_BACKPORTS}"
 LB_PROPOSED_UPDATES="${LB_PROPOSED_UPDATES}"
 
 # Set path to one or more local deb repositories
-LB_LOCALREPOS="${LB_LOCALREPOS}"
+LB_LOCALREPO_LOCATIONS="${LB_LOCALREPO_LOCATIONS}"
+
+# Set list components for one or more local deb repositories
+LB_LOCALREPO_LISTS="${LB_LOCALREPO_LISTS}"
 EOF
 
 # Creating lb_binary_* configuration

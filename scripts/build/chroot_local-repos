@@ -28,31 +28,36 @@ Echo_message "Begin enabling use of temporary local deb repository"
 
 Require_stagefiles config bootstrap
 
-if [ -z "${LB_LOCALREPOS}" ]
+if [ -z "${LB_LOCALREPO_LOCATIONS}" ]
 then
     exit 0
 fi
 
-for _LOCALREPO_PATH in ${LB_LOCALREPOS}
+_LOCALREPO_COUNT="$(printf '%s\n' "${LB_LOCALREPO_LOCATIONS}" | tr ' ' '\n' | wc -l)"
+_LOCALREPO_IDX=1
+
+while [ "${_LOCALREPO_IDX}" -le "${_LOCALREPO_COUNT}" ]
 do
-    case "${_ACTION}" in
-        configure)
-            _LOCALREPO_FILE="$(basename "${_LOCALREPO_PATH}")"
-            mkdir -p chroot/root/localrepos/"${_LOCALREPO_FILE}"
-            mount --bind "${_LOCALREPO_PATH}" chroot/root/localrepos/"${_LOCALREPO_FILE}"
-            echo "deb [trusted=yes] file:/root/localrepos/${_LOCALREPO_FILE} ./" > chroot/etc/apt/sources.list.d/"${_LOCALREPO_FILE}".list
-            ;;
+	_LOCALREPO_PATH="$(printf '%s\n' "${LB_LOCALREPO_LOCATIONS}" | cut -d' ' -f"${_LOCALREPO_IDX}")"
+	_LOCALREPO_LIST="$(printf '%s\n' "${LB_LOCALREPO_LISTS}" | cut -d',' -f"${_LOCALREPO_IDX}")"
+	_LOCALREPO_FILE="$(basename "${_LOCALREPO_PATH}")"
+	case "${_ACTION}" in
+		configure)
+			mkdir -p chroot/root/localrepos/"${_LOCALREPO_FILE}"
+			mount --bind "${_LOCALREPO_PATH}" chroot/root/localrepos/"${_LOCALREPO_FILE}"
+			echo "deb [trusted=yes] file:/root/localrepos/${_LOCALREPO_FILE} ${_LOCALREPO_LIST}" > chroot/etc/apt/sources.list.d/"${_LOCALREPO_FILE}".list
+			;;
 
-        deconfigure)
-            _LOCALREPO_FILE="$(basename "${_LOCALREPO_PATH}")"
-            rm chroot/etc/apt/sources.list.d/"${_LOCALREPO_FILE}".list
-            umount chroot/root/localrepos/"${_LOCALREPO_FILE}"
-            rm -rf chroot/root/localrepos/"${_LOCALREPO_FILE}"
-            ;;
+		deconfigure)
+			rm chroot/etc/apt/sources.list.d/"${_LOCALREPO_FILE}".list
+			umount chroot/root/localrepos/"${_LOCALREPO_FILE}"
+			rm -rf chroot/root/localrepos/"${_LOCALREPO_FILE}"
+			;;
 
-        *)
-            Echo_error "Invalid action parameter: '${_ACTION}'"
-            Usage --fail
-            ;;
-    esac
+		*)
+			Echo_error "Invalid action parameter: '${_ACTION}'"
+			Usage --fail
+			;;
+	esac
+	_LOCALREPO_IDX=$(( _LOCALREPO_IDX + 1 ))
 done
