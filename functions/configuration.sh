@@ -862,6 +862,11 @@ Validate_config_dependencies ()
 		fi
 	fi
 
+    if [ "$(printf '%s\n' "${LB_LOCALREPO_LOCATIONS}" | tr ' ' '\n' | wc -l)" -ne "$(printf '%s\n' "${LB_LOCALREPO_LISTS}" | tr ',' '\n' | wc -l)" ]; then
+        Echo_error "LB_LOCALREPO_LOCATIONS (--chroot-localrepo-locations) and LB_LOCALREPO_LISTS (--chroot-localrepo-lists) must have the same number of parameters. Note that local repo locations are space-separated while local repo lists are comma-separated."
+        exit 1
+    fi
+
 	Validate_http_proxy
 }
 
