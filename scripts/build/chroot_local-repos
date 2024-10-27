@@ -61,3 +61,8 @@ do
 	esac
 	_LOCALREPO_IDX=$(( _LOCALREPO_IDX + 1 ))
 done
+
+if [ "${_ACTION}" = 'deconfigure' ]
+then
+	rm -rf chroot/root/localrepos
+fi
