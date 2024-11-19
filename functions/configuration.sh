@@ -179,6 +179,7 @@ Prepare_config ()
 
 	# Mirrors:
 	# *_MIRROR_BOOTSTRAP: to fetch packages from
+	# *_MIRROR_BOOTSTRAP_SECURITY: security mirror to fetch packages from
 	# *_MIRROR_CHROOT: to fetch packages from
 	# *_MIRROR_CHROOT_SECURITY: security mirror to fetch packages from
 	# *_MIRROR_BINARY: mirror which ends up in the image
@@ -187,6 +188,8 @@ Prepare_config ()
 	if [ "${LB_MODE}" = "debian" ]; then
 		LB_MIRROR_BOOTSTRAP="${LB_MIRROR_BOOTSTRAP:-http://deb.debian.org/debian/}"
 		LB_PARENT_MIRROR_BOOTSTRAP="${LB_PARENT_MIRROR_BOOTSTRAP:-${LB_MIRROR_BOOTSTRAP}}"
+		LB_MIRROR_BOOTSTRAP_SECURITY="${LB_MIRROR_BOOTSTRAP_SECURITY:-}"
+		LB_PARENT_MIRROR_BOOTSTRAP_SECURITY="${LB_PARENT_MIRROR_BOOTSTRAP_SECURITY:-${LB_MIRROR_BOOTSTRAP_SECURITY}}"
 	fi
 	LB_MIRROR_CHROOT="${LB_MIRROR_CHROOT:-${LB_MIRROR_BOOTSTRAP}}"
 	LB_PARENT_MIRROR_CHROOT="${LB_PARENT_MIRROR_CHROOT:-${LB_PARENT_MIRROR_BOOTSTRAP}}"

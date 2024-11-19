@@ -166,6 +166,8 @@
 .br
 	[\fB\-\-mirror\-bootstrap\fR \fIURL\fR]
 .br
+	[\fB\-\-mirror\-bootstrap\-security\fR \fIURL\fR]
+.br
 	[\fB\-\-mirror\-chroot\fR \fIURL\fR]
 .br
 	[\fB\-\-mirror\-chroot\-security\fR \fIURL\fR]
@@ -197,6 +199,8 @@
 	[\fB\-\-parent\-mirror\-binary\-security\fR \fIURL\fR]
 .br
 	[\fB\-m\fR|\fB\-\-parent\-mirror\-bootstrap\fR \fIURL\fR]
+.br
+	[\fB\-\-parent\-mirror\-bootstrap\-security\fR \fIURL\fR]
 .br
 	[\fB\-\-parent\-mirror\-chroot\fR \fIURL\fR]
 .br
@@ -325,7 +329,7 @@ defines the distribution where the debian\-installer files should be taken out f
 .IP "\fB\-\-debian\-installer\-gui\fR true|false" 4
 defines whether the graphical version of the debian\-installer should be provided alongside the text based one. This defaults to true.
 .IP "\fB\-\-debian\-installer\-preseedfile\fR \fIFILE\fR|\fIURL\fR" 4
-sets the filename or URL for an optionally used and included preseeding file for debian\-installer. If config/binary_debian\-installer/preseed.cfg exists, it will be used by default. 
+sets the filename or URL for an optionally used and included preseeding file for debian\-installer. If config/binary_debian\-installer/preseed.cfg exists, it will be used by default.
 .IP "\fB\-\-debootstrap\-engine\fR \fIdebootstrap\fR|\fImmdebstrap\fR" 4
 sets the debootstrap implementation to use. Currently debootstrap and mmdebstrap are supported.
 .IP "\fB\-\-debootstrap\-options\fR \fIOPTION\fR|""\fIOPTIONS\fR""" 4
@@ -400,6 +404,8 @@ sets the location of the derivative package mirror that should end up configured
 sets the location of the derivatives security package mirror that should end up configured in the final image. This defaults to 'http://security.debian.org/'.
 .IP "\fB\-\-mirror\-bootstrap\fR \fIURL\fR" 4
 sets the location of the debian package mirror that should be used to bootstrap the derivative from. This defaults to 'http://deb.debian.org/debian/'.
+.IP "\fB\-\-mirror\-bootstrap\-security\fR \fIURL\fR" 4
+sets the location of the debian security package mirror that should be used to bootstrap the derivative from. This defaults to nothing, meaning only the mirror set by \-\-mirror\-bootstrap will be used for bootstrapping. Only has an effect when using mmdebstrap.
 .IP "\fB\-\-mirror\-chroot\fR \fIURL\fR" 4
 sets the location of the debian package mirror that will be used to fetch the packages of the derivative in order to build the live system. By default, this is set to the value of \fB\-\-mirror\-bootstrap\fR.
 .IP "\fB\-\-mirror\-chroot\-security\fR \fIURL\fR" 4
@@ -432,6 +438,8 @@ sets the location of the debian package mirror that should end up configured in 
 sets the location of the debian security package mirror that should end up configured in the final image. This defaults to the value of \fB\-\-mirror\-binary\-security\fR.
 .IP "\-m|\fB\-\-parent\-mirror\-bootstrap\fR \fIURL\fR" 4
 sets the location of the debian package mirror that should be used to bootstrap from. This defaults to the value of \fB\-\-mirror\-bootstrap\fR.
+.IP "\fB\-\-parent\-mirror\-bootstrap\-security\fR \fIURL\fR" 4
+sets the location of the debian security package mirror that should be used to bootstrap from. This defaults to the value of \fB\-\-mirror\-bootstrap\-security\fR. Only has an effect when using mmdebstrap.
 .IP "\fB\-\-parent\-mirror\-chroot\fR \fIURL\fR" 4
 sets the location of the debian package mirror that will be used to fetch the packages in order to build the live system. This defaults to the value of \fB\-\-parent\-mirror\-bootstrap\fR.
 .IP "\fB\-\-parent\-mirror\-chroot\-security\fR \fIURL\fR" 4
