@@ -41,7 +41,7 @@ Prepare_config ()
 
 	LB_MODE="${LB_MODE:-debian}"
 	LB_DERIVATIVE="false"
-	LB_DISTRIBUTION="${LB_DISTRIBUTION:-bullseye}"
+	LB_DISTRIBUTION="${LB_DISTRIBUTION:-testing}"
 	LB_DISTRIBUTION_CHROOT="${LB_DISTRIBUTION_CHROOT:-${LB_DISTRIBUTION}}"
 	LB_DISTRIBUTION_BINARY="${LB_DISTRIBUTION_BINARY:-${LB_DISTRIBUTION_CHROOT}}"
 
@@ -179,6 +179,7 @@ Prepare_config ()
 
 	# Mirrors:
 	# *_MIRROR_BOOTSTRAP: to fetch packages from
+	# *_MIRROR_BOOTSTRAP_SECURITY: security mirror to fetch packages from
 	# *_MIRROR_CHROOT: to fetch packages from
 	# *_MIRROR_CHROOT_SECURITY: security mirror to fetch packages from
 	# *_MIRROR_BINARY: mirror which ends up in the image
@@ -187,6 +188,8 @@ Prepare_config ()
 	if [ "${LB_MODE}" = "debian" ]; then
 		LB_MIRROR_BOOTSTRAP="${LB_MIRROR_BOOTSTRAP:-http://deb.debian.org/debian/}"
 		LB_PARENT_MIRROR_BOOTSTRAP="${LB_PARENT_MIRROR_BOOTSTRAP:-${LB_MIRROR_BOOTSTRAP}}"
+		LB_MIRROR_BOOTSTRAP_SECURITY="${LB_MIRROR_BOOTSTRAP_SECURITY:-}"
+		LB_PARENT_MIRROR_BOOTSTRAP_SECURITY="${LB_PARENT_MIRROR_BOOTSTRAP_SECURITY:-${LB_MIRROR_BOOTSTRAP_SECURITY}}"
 	fi
 	LB_MIRROR_CHROOT="${LB_MIRROR_CHROOT:-${LB_MIRROR_BOOTSTRAP}}"
 	LB_PARENT_MIRROR_CHROOT="${LB_PARENT_MIRROR_CHROOT:-${LB_PARENT_MIRROR_BOOTSTRAP}}"
@@ -934,7 +937,7 @@ Validate_http_proxy ()
 	Validate_http_proxy_source "environment variable http_proxy" "${http_proxy}"
 	Validate_http_proxy_source "command line option --apt-http-proxy" "${LB_APT_HTTP_PROXY}"
 
-	# This is the value to use for the the other scripts in live-build
+	# This is the value to use for the other scripts in live-build
 	export http_proxy="${LAST_SEEN_PROXY_VALUE}"
 	if [ ! -z "${http_proxy}" ]; then
 		Echo_message "Using http proxy: ${http_proxy}"

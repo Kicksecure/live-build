@@ -98,6 +98,7 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [--mirror-binary URL]\n\
 \t    [--mirror-binary-security URL]\n\
 \t    [--mirror-bootstrap URL]\n\
+\t    [--mirror-bootstrap-security URL]\n\
 \t    [--mirror-chroot URL]\n\
 \t    [--mirror-chroot-security URL]\n\
 \t    [--mirror-debian-installer URL]\n\
@@ -115,6 +116,7 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [--parent-mirror-binary URL]\n\
 \t    [--parent-mirror-binary-security URL]\n\
 \t    [-m|--parent-mirror-bootstrap URL]\n\
+\t    [--parent-mirror-bootstrap-security URL]\n\
 \t    [--parent-mirror-chroot URL]\n\
 \t    [--parent-mirror-chroot-security URL]\n\
 \t    [--parent-mirror-debian-installer URL]\n\
@@ -167,6 +169,7 @@ Local_arguments ()
 		keyring-packages:,
 		linux-flavours:,linux-packages:,loadlin:,losetup:,
 		memtest:,mirror-binary:,mirror-binary-security:,mirror-bootstrap:,
+		mirror-bootstrap-security:,
 		mirror-chroot:,mirror-chroot-security:,mirror-debian-installer:,mode:,
 		net-cow-filesystem:,net-cow-mountoptions:,net-cow-path:,
 		net-cow-server:,net-root-filesystem:,net-root-mountoptions:,
@@ -176,6 +179,7 @@ Local_arguments ()
 		parent-distribution:,parent-distribution-binary:,
 		parent-distribution-chroot:,parent-mirror-binary:,
 		parent-mirror-binary-security:,parent-mirror-bootstrap:,
+		parent-mirror-bootstrap-security:,
 		parent-mirror-chroot:,parent-mirror-chroot-security:,
 		parent-mirror-debian-installer:,
 		proposed-updates:,
@@ -674,6 +678,11 @@ Local_arguments ()
 				shift 2
 				;;
 
+			--mirror-bootstrap-security)
+				LB_MIRROR_BOOTSTRAP_SECURITY="${2}"
+				shift 2
+				;;
+
 			--mirror-chroot)
 				LB_MIRROR_CHROOT="${2}"
 				shift 2
@@ -786,6 +795,11 @@ Local_arguments ()
 
 			-m|--parent-mirror-bootstrap)
 				LB_PARENT_MIRROR_BOOTSTRAP="${2}"
+				shift 2
+				;;
+
+			--parent-mirror-bootstrap-security)
+				LB_PARENT_MIRROR_BOOTSTRAP_SECURITY="${2}"
 				shift 2
 				;;
 
@@ -1149,6 +1163,9 @@ LB_PARENT_ARCHIVE_AREAS="${LB_PARENT_ARCHIVE_AREAS}"
 # Set parent mirror to bootstrap from
 LB_PARENT_MIRROR_BOOTSTRAP="${LB_PARENT_MIRROR_BOOTSTRAP}"
 
+# Set parent security mirror to bootstrap from
+LB_PARENT_MIRROR_BOOTSTRAP_SECURITY="${LB_PARENT_MIRROR_BOOTSTRAP_SECURITY}"
+
 # Set parent mirror to fetch packages from
 LB_PARENT_MIRROR_CHROOT="${LB_PARENT_MIRROR_CHROOT}"
 
@@ -1166,6 +1183,9 @@ LB_PARENT_MIRROR_DEBIAN_INSTALLER="${LB_PARENT_MIRROR_DEBIAN_INSTALLER}"
 
 # Set mirror to bootstrap from
 LB_MIRROR_BOOTSTRAP="${LB_MIRROR_BOOTSTRAP}"
+
+# Set security mirror to bootstrap from
+LB_MIRROR_BOOTSTRAP_SECURITY="${LB_MIRROR_BOOTSTRAP_SECURITY}"
 
 # Set mirror to fetch packages from
 LB_MIRROR_CHROOT="${LB_MIRROR_CHROOT}"
