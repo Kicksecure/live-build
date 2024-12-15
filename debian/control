@@ -35,6 +35,7 @@ Recommends:
 Suggests:
  e2fsprogs,
  git,
+ isomd5sum,
  parted,
  mtd-utils,
 Description: Live System Build Components
