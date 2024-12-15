@@ -42,7 +42,10 @@ ARCHITECTURE="$(echo ${LB_ARCHITECTURE} | sed -e 's| |/|g')"
 DISTRIBUTION="$(echo ${LB_DISTRIBUTION_BINARY} | cut -b 1 | tr '[a-z]' '[A-Z]')"
 DISTRIBUTION="${DISTRIBUTION}$(echo ${LB_DISTRIBUTION_BINARY} | cut -b 2-)"
 
-if [ -e chroot/etc/os-release ]
+if [ -e chroot/etc/kicksecure_version ]
+then
+	VERSION="$(cat chroot/etc/kicksecure_version)"
+elif [ -e chroot/etc/os-release ]
 then
 	VERSION="$(. chroot/etc/os-release && echo ${VERSION_ID})"
 fi
@@ -51,7 +54,7 @@ VERSION="${VERSION:-none}"
 
 case "${LB_MODE}" in
 	debian)
-		TITLE="Debian GNU/Linux"
+		TITLE="Kicksecure GNU/Linux"
 		STRING="Snapshot ${ARCHITECTURE}"
 		;;
 
