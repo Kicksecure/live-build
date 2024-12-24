@@ -127,8 +127,10 @@ USAGE="${PROGRAM} [--apt apt|apt-get|aptitude]\n\
 \t    [-s|--source-images iso|netboot|tar|hdd]\n\
 \t    [--swap-file-path PATH]\n\
 \t    [--swap-file-size MB]\n\
+\t    [--sysmaint-enable]\n\
 \t    [--system live|normal]\n\
 \t    [--uefi-secure-boot auto|enable|disable]\n\
+\t    [--unrestricted-admin-enable]\n\
 \t    [--updates true|false]\n\
 \t    [--utc-time true|false]\n\
 \t    [--validate]\n\
@@ -184,9 +186,11 @@ Local_arguments ()
 		parent-mirror-debian-installer:,
 		proposed-updates:,
 		quiet,
-		security:,source:,source-images:,swap-file-path:,swap-file-size:,system:,
+		security:,source:,source-images:,swap-file-path:,swap-file-size:,
+		sysmaint-enable:,system:,
 		tasksel:,
-		uefi-secure-boot:,updates:,utc-time:,usage,
+		uefi-secure-boot:,unrestricted-admin-enable:,
+		updates:,utc-time:,usage,
 		validate,verbose,version,
 		win32-loader:,
 		zsync:"
@@ -848,6 +852,11 @@ Local_arguments ()
 				shift 2
 				;;
 
+			--sysmaint-enable)
+				LB_SYSMAINT_ENABLE="true"
+				shift
+				;;
+
 			--system)
 				LB_SYSTEM="${2}"
 				shift 2
@@ -861,6 +870,11 @@ Local_arguments ()
 			--uefi-secure-boot)
 				LB_UEFI_SECURE_BOOT="${2}"
 				shift 2
+				;;
+
+			--unrestricted-admin-enable)
+				LB_UNRESTRICTED_ADMIN_ENABLE="true"
+				shift
 				;;
 
 			--updates)
@@ -1378,8 +1392,14 @@ LB_SWAP_FILE_PATH="${LB_SWAP_FILE_PATH}"
 # Set swap file size
 LB_SWAP_FILE_SIZE="${LB_SWAP_FILE_SIZE}"
 
+# Set sysmaint enable
+LB_SYSMAINT_ENABLE="${LB_SYSMAINT_ENABLE}"
+
 # Enable/disable UEFI secure boot support
 LB_UEFI_SECURE_BOOT="${LB_UEFI_SECURE_BOOT}"
+
+# Set unrestricted admin enable
+LB_UNRESTRICTED_ADMIN_ENABLE="${LB_UNRESTRICTED_ADMIN_ENABLE}"
 EOF
 
 # Creating lb_source_* configuration
