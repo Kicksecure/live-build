@@ -130,16 +130,28 @@ case "${LB_INITRAMFS}" in
 		APPEND_LIVE="${LB_BOOTAPPEND_LIVE} findiso=\${iso_path}"
 		APPEND_CHECKSUM_LIVE="${APPEND_LIVE} verify-checksums"
 		APPEND_CHECKSUM_LIVE_FAILSAFE="${LB_BOOTAPPEND_LIVE_FAILSAFE} verify-checksums"
+		APPEND_SYSMAINT_LIVE="${APPEND_LIVE} systemd.unit=sysmaint-boot.target boot-role=sysmaint live-config.noautologin"
+		APPEND_CHECKSUM_SYSMAINT_LIVE="${APPEND_CHECKSUM_LIVE} systemd.unit=sysmaint-boot.target boot-role=sysmaint live-config.noautologin"
+		APPEND_UNRESTRICTED_ADMIN_LIVE="${APPEND_LIVE} boot-role=unrestricted-admin"
+		APPEND_CHECKSUM_UNRESTRICTED_ADMIN_LIVE="${APPEND_CHECKSUM_LIVE} boot-role=unrestricted-admin"
 		;;
 	dracut-live)
 		APPEND_LIVE="${LB_BOOTAPPEND_LIVE} iso-scan/filename=\${iso_path}"
 		APPEND_CHECKSUM_LIVE="${APPEND_LIVE} rd.live.check"
 		APPEND_CHECKSUM_LIVE_FAILSAFE="${LB_BOOTAPPEND_LIVE_FAILSAFE} rd.live.check"
+		APPEND_SYSMAINT_LIVE="${APPEND_LIVE} systemd.unit=sysmaint-boot.target boot-role=sysmaint live-config.noautologin"
+		APPEND_CHECKSUM_SYSMAINT_LIVE="${APPEND_CHECKSUM_LIVE} systemd.unit=sysmaint-boot.target boot-role=sysmaint live-config.noautologin"
+		APPEND_UNRESTRICTED_ADMIN_LIVE="${APPEND_LIVE} boot-role=unrestricted-admin"
+		APPEND_CHECKSUM_UNRESTRICTED_ADMIN_LIVE="${APPEND_CHECKSUM_LIVE} boot-role=unrestricted-admin"
 		;;
 	none)
 		APPEND_LIVE="${LB_BOOTAPPEND_LIVE}"
 		APPEND_CHECKSUM_LIVE="${APPEND_LIVE} verify-checksums"
 		APPEND_CHECKSUM_LIVE_FAILSAFE="${LB_BOOTAPPEND_LIVE_FAILSAFE} verify-checksums"
+		APPEND_SYSMAINT_LIVE="${APPEND_LIVE} systemd.unit=sysmaint-boot.target boot-role=sysmaint live-config.noautologin"
+		APPEND_CHECKSUM_SYSMAINT_LIVE="${APPEND_CHECKSUM_LIVE} systemd.unit=sysmaint-boot.target boot-role=sysmaint live-config.noautologin"
+		APPEND_UNRESTRICTED_ADMIN_LIVE="${APPEND_LIVE} boot-role=unrestricted-admin"
+		APPEND_CHECKSUM_UNRESTRICTED_ADMIN_LIVE="${APPEND_CHECKSUM_LIVE} boot-role=unrestricted-admin"
 		;;
 esac
 
@@ -222,6 +234,34 @@ else
 				"/${INITFS}/${DEFAULT_INITRD}" \
 				"${APPEND_CHECKSUM_LIVE_FAILSAFE}"
 		fi
+	fi
+fi
+
+# Sysmaint bootloader entires
+if [ "${LB_SYSMAINT_ENABLE}" = "true" ]; then
+	Grub_live_menu_entry "Install system (${_FLAVOUR})" \
+		"/${INITFS}/${DEFAULT_KERNEL}" \
+		"/${INITFS}/${DEFAULT_INITRD}" \
+		"${APPEND_SYSMAINT_LIVE}"
+	if [ "${LB_CHECKSUMS}" != "none" ]; then
+		Grub_live_menu_entry "Install system (${_FLAVOUR}) (verify checksums)" \
+			"${INITFS}/${DEFAULT_KERNEL}" \
+			"${INITFS}/${DEFAULT_INITRD}" \
+			"${APPEND_CHECKSUM_SYSMAINT_LIVE}"
+	fi
+fi
+
+# Unrestricted admin bootloader entires
+if [ "${LB_UNRESTRICTED_ADMIN_ENABLE}" = "true" ]; then
+	Grub_live_menu_entry "Live system with unrestricted admin (${_FLAVOUR})" \
+		"/${INITFS}/${DEFAULT_KERNEL}" \
+		"/${INITFS}/${DEFAULT_INITRD}" \
+		"${APPEND_UNRESTRICTED_ADMIN_LIVE}"
+	if [ "${LB_CHECKSUMS}" != "none" ]; then
+		Grub_live_menu_entry "Live system with unrestricted admin (${_FLAVOUR}) (verify checksums)" \
+			"${INITFS}/${DEFAULT_KERNEL}" \
+			"${INITFS}/${DEFAULT_INITRD}" \
+			"${APPEND_CHECKSUM_UNRESTRICTED_ADMIN_LIVE}"
 	fi
 fi
 
