@@ -245,8 +245,8 @@ if [ "${LB_SYSMAINT_ENABLE}" = "true" ]; then
 		"${APPEND_SYSMAINT_LIVE}"
 	if [ "${LB_CHECKSUMS}" != "none" ]; then
 		Grub_live_menu_entry "Install system (${_FLAVOUR}) (verify checksums)" \
-			"${INITFS}/${DEFAULT_KERNEL}" \
-			"${INITFS}/${DEFAULT_INITRD}" \
+			"/${INITFS}/${DEFAULT_KERNEL}" \
+			"/${INITFS}/${DEFAULT_INITRD}" \
 			"${APPEND_CHECKSUM_SYSMAINT_LIVE}"
 	fi
 fi
