@@ -306,7 +306,8 @@ Prepare_config ()
 
 	case "${LB_ARCHITECTURE}" in
 		amd64|i386)
-			if [ "${LB_INITRAMFS}" = "dracut-live" ]; then
+			if [ "${LB_INITRAMFS}" = "dracut-live" ] && \
+				[ "${LB_IMAGE_TYPE}" != "netboot" ]; then
 				LB_BOOTLOADER_BIOS="${LB_BOOTLOADER_BIOS:-grub-pc}"
 			else
 				LB_BOOTLOADER_BIOS="${LB_BOOTLOADER_BIOS:-syslinux}"
@@ -341,7 +342,11 @@ Prepare_config ()
 		done
 	fi
 
-	LB_CHECKSUMS="${LB_CHECKSUMS:-sha256}"
+	if [ "${LB_INITRAMFS}" = "dracut-live" ]; then
+		LB_CHECKSUMS="${LB_CHECKSUMS:-md5}"
+	else
+		LB_CHECKSUMS="${LB_CHECKSUMS:-sha256}"
+	fi
 
 	LB_COMPRESSION="${LB_COMPRESSION:-none}"
 
@@ -729,11 +734,12 @@ Validate_config_permitted_values ()
 			Echo_error "Currently unsupported/untested: grub-legacy and dracut."
 			exit 1
 		fi
-		if [ "${LB_BOOTLOADER_BIOS}" = "syslinux" ]; then
-			Echo_error "Currently unsupported/untested: syslinux and dracut."
+		if [ "${LB_BOOTLOADER_BIOS}" = "syslinux" ] && \
+				[ "${LB_IMAGE_TYPE}" != "netboot" ]; then
+			Echo_error "Currently unsupported/untested: syslinux and dracut without netboot."
 			exit 1
 		fi
-		if ! In_list "${LB_IMAGE_TYPE}" iso iso-hybrid; then
+		if ! In_list "${LB_IMAGE_TYPE}" iso iso-hybrid netboot; then
 			# The boot=live:CDLABEL requires a CD medium
 			Echo_error "Currently unsupported/untested: image type ${LB_IMAGE_TYPE} and dracut."
 			exit 1
@@ -866,11 +872,6 @@ Validate_config_dependencies ()
 			exit 1
 		fi
 	fi
-
-    if [ "$(printf '%s\n' "${LB_LOCALREPO_LOCATIONS}" | tr ' ' '\n' | wc -l)" -ne "$(printf '%s\n' "${LB_LOCALREPO_LISTS}" | tr ',' '\n' | wc -l)" ]; then
-        Echo_error "LB_LOCALREPO_LOCATIONS (--chroot-localrepo-locations) and LB_LOCALREPO_LISTS (--chroot-localrepo-lists) must have the same number of parameters. Note that local repo locations are space-separated while local repo lists are comma-separated."
-        exit 1
-    fi
 
 	if [ "${LB_CHECKSUMS}" != "none" ] && [ "${LB_CHECKSUMS}" != "md5" ] && [ "${LB_INITRAMFS}" = "dracut-live" ]; then
 		Echo_error "You have selected values of LB_CHECKSUMS and LB_INITRAMFS that are incompatible - dracut-live works only with no checksums or md5 checksums."
