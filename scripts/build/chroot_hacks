@@ -106,17 +106,6 @@ case "${LB_INITRAMFS_COMPRESSION}" in
 		;;
 esac
 
-# Dracut checksum support requires isomd5sum
-if [ "${LB_CHECKSUMS}" != "none" ] && [ "${LB_INITRAMFS}" = "dracut-live" ]
-then
-  Apt chroot install isomd5sum
-  # Update initramfs so that checkisomd5 ends up in the initramfs
-  echo "add_dracutmodules+=\" dmsquash-live \"" > chroot/etc/dracut.conf.d/20-live-module-${SOURCE_DATE_EPOCH}.conf
-  # This ensures that dracut uses the same filename as initramfs-tools
-  Chroot chroot dpkg-reconfigure dracut
-  rm -f chroot/etc/dracut.conf.d/20-live-module-${SOURCE_DATE_EPOCH}.conf
-fi
-
 rm -f chroot/etc/hosts
 
 if [ "${LB_DEBIAN_INSTALLER}" = "live" ]
