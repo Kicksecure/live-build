@@ -27,6 +27,13 @@ shift
 # Requiring stage file
 Require_stagefiles config bootstrap
 
+policy_rcd_contents="$(cat <<EOF
+#!/bin/sh
+echo "All runlevel operations denied by policy" >&2
+exit 101
+EOF
+)"
+
 case "${_ACTION}" in
 	install)
 		Echo_message "Configuring file /usr/sbin/policy-rc.d"
@@ -39,18 +46,21 @@ case "${_ACTION}" in
 
 		if [ -e chroot/usr/sbin/policy-rc.d ]
 		then
-			# Save policy-rc.d file
-			Chroot chroot dpkg-divert --rename --quiet --add /usr/sbin/policy-rc.d
+			if [ -e /etc/alternatives/policy-rc.d ]
+			then
+				# Install an alternative for policy-rc.d
+				echo "${policy_rcd_contents}" > chroot/usr/sbin/policy-rc.d.live-build
+				Chroot chroot update-alternatives --install /usr/sbin/policy-rc.d policy-rc.d /usr/sbin/policy-rc.d.live-build 1000
+				chmod 0755 chroot/usr/sbin/policy-rc.d.live-build
+			else
+				# Save policy-rc.d file
+				Chroot chroot dpkg-divert --rename --quiet --add /usr/sbin/policy-rc.d
+
+				# Create policy-rc.d file
+				echo "${policy_rcd_contents}" > chroot/usr/sbin/policy-rc.d
+				chmod 0755 chroot/usr/sbin/policy-rc.d
+			fi
 		fi
-
-		# Create policy-rc.d file
-cat > chroot/usr/sbin/policy-rc.d << EOF
-#!/bin/sh
-echo "All runlevel operations denied by policy" >&2
-exit 101
-EOF
-
-		chmod 0755 chroot/usr/sbin/policy-rc.d
 
 		# Creating stage file
 		Create_stagefile
@@ -65,11 +75,21 @@ EOF
 		# Acquire lock file
 		Acquire_lockfile
 
-		# Remove custom policy-rc.d file
-		rm -f chroot/usr/sbin/policy-rc.d
-
-		if [ -e chroot/usr/sbin/policy-rc.d.distrib ]
+		alternatives_query_policyrcd="$(
+			Chroot chroot update-alternatives --query policy-rc.d \
+				| grep 'Value:' \
+				| cut -d' ' -f2
+		)"
+		if [ "${alternatives_query_policyrcd}" = '/usr/sbin/policy-rc.d.live-build' ]
 		then
+			# Remove the live-build alternative for policy-rc.d
+			Chroot chroot update-alternatives --remove policy-rc.d /usr/sbin/policy-rc.d.live-build
+			rm -f chroot/usr/sbin/policy-rc.d.live-build
+		elif [ -e chroot/usr/sbin/policy-rc.d.distrib ]
+		then
+			# Remove custom policy-rc.d file
+			rm -f chroot/usr/sbin/policy-rc.d
+
 			# Restore policy-rc.d file
 			Chroot chroot dpkg-divert --rename --quiet --remove /usr/sbin/policy-rc.d
 		fi
