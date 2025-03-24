@@ -334,6 +334,14 @@ export LINUX_KERNEL_ABI=\$(dpkg-query --showformat "\\\${db:Status-Abbrev} \\\${
 http_proxy=${http_proxy} MIRROR="[check-valid-until=no] ${LB_PARENT_MIRROR_CHROOT}" TARGETS="${TARGETS}" USE_UDEBS_FROM=${LB_PARENT_DISTRIBUTION_CHROOT} ROOTCMD=" " bash ./daily-build build-only
 EOF
 				Chroot chroot "sh buildit.sh"
+				if [ ! -e chroot/debian-installer/build/dest/cdrom/"${VMLINUZ_DI}" ];
+				then
+					Echo_error "The installer could not be built"
+					for TARGET in ${TARGETS}; do
+						Echo_file chroot/debian-installer/build/dest/${TARGET}.log
+					done
+					exit 1
+				fi
 				# Place the files in the cache. Download_file will use the cache instead of downloading
 				Prepare_installer_cache cdrom/"${VMLINUZ_DI}"
 				Prepare_installer_cache cdrom/"${INITRD_DI}"
@@ -392,7 +400,14 @@ then
 
 	case "${LB_ARCHITECTURE}" in
 		amd64)
-			DI_REQ_PACKAGES="grub-pc grub-common libfuse3-3" # BIOS
+			DI_REQ_PACKAGES="grub-pc grub-common" # BIOS
+			# Starting in trixie, a newer version of libfuse is required
+			if [ $(Check_package_available "libfuse3-4") -eq 1 ]
+			then
+				DI_REQ_PACKAGES="${DI_REQ_PACKAGES} libfuse3-4"
+			else
+				DI_REQ_PACKAGES="${DI_REQ_PACKAGES} libfuse3-3"
+			fi
 			# Starting in trixie, the t64-packages have a 64-bit timestamp
 			if [ $(Check_package_available "libefiboot1t64") -eq 1 ]
 			then
