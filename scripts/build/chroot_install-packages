@@ -78,52 +78,20 @@ then
 
 	if [ "${LB_INITRAMFS}" = "dracut-live" ]; then
 		# Install each package separately, because the list contains conflicts
-		# _INSTALL_ONE_BY_ONE="--max-args 1"
-		_INSTALL_ONE_BY_ONE='y'
+		_INSTALL_ONE_BY_ONE="--max-args 1"
 	else
 		_INSTALL_ONE_BY_ONE=""
 	fi
 	# Installing packages
 	case "${LB_APT}" in
 		apt|apt-get)
-			if [ "${_INSTALL_ONE_BY_ONE}" = 'y' ]
-			then
-				# Move aside the update-initramfs trigger to avoid several unnecessary initramfs rebuilds
-				while read -r chroot_package_file_line;
-				do
-				    for chroot_package in $chroot_package_file_line;
-				    do
-						mv chroot/var/lib/dpkg/triggers/update-initramfs chroot/update-initramfs-bak || true
-						Chroot chroot "apt-get ${APT_OPTIONS} install ${chroot_package}"
-				    done
-				done < chroot/root/packages.chroot
-			else
-				Chroot chroot "xargs --arg-file=/root/packages.chroot apt-get ${APT_OPTIONS} install"
-			fi
+			Chroot chroot "xargs ${_INSTALL_ONE_BY_ONE} --arg-file=/root/packages.chroot apt-get ${APT_OPTIONS} install"
 			;;
 
 		aptitude)
-		if [ "${_INSTALL_ONE_BY_ONE}" = 'y' ]
-			then
-				# Move aside the update-initramfs trigger to avoid several unnecessary initramfs rebuilds
-				while read -r chroot_package_file_line;
-				do
-				    for chroot_package in $chroot_package_file_line;
-				    do
-						mv chroot/var/lib/dpkg/triggers/update-initramfs chroot/update-initramfs-bak || true
-						Chroot chroot "aptitude ${APTITUDE_OPTIONS} install ${chroot_package}"
-				    done
-				done < chroot/root/packages.chroot
-			else
-				Chroot chroot "xargs --arg-file=/root/packages.chroot aptitude ${APTITUDE_OPTIONS} install"
-			fi
+			Chroot chroot "xargs ${_INSTALL_ONE_BY_ONE} --arg-file=/root/packages.chroot aptitude ${APTITUDE_OPTIONS} install"
 			;;
 	esac
-
-	if [ -e chroot/update-initramfs-bak ];
-	then
-		mv chroot/update-initramfs-bak chroot/var/lib/dpkg/triggers/update-initramfs
-	fi
 
 	# Tidying up
 	rm -f chroot/root/packages.chroot
