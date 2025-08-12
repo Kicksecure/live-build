@@ -15,7 +15,7 @@ set -e
 [ -e "${LIVE_BUILD}/scripts/build.sh" ] && . "${LIVE_BUILD}/scripts/build.sh" || . /usr/lib/live/build.sh
 
 # Setting static variables
-DESCRIPTION="Manage /etc/apt/sources.list"
+DESCRIPTION="Manage /etc/apt/sources.list or /etc/apt/sources.list.d/debian.sources"
 USAGE="${PROGRAM} {source|binary|chroot} {install|remove} [--force]"
 
 # Processing arguments and configuration files
@@ -35,7 +35,7 @@ Require_stagefiles config bootstrap
 
 case "${_ACTION}" in
 	install)
-		Echo_message "Configuring file /etc/apt/sources.list"
+		Echo_message "Configuring apt sources"
 
 		# Checking stage file
 		Check_stagefile
@@ -54,7 +54,7 @@ case "${_ACTION}" in
 		# Configure custom sources.list
 		Create_apt_sources_list chroot "${_PASS}"
 
-		# Adding local apt sources (chroot)
+		# Adding local apt sources for one-line list format (chroot)
 		for FILE in config/archives/*.list config/archives/*.list.chroot
 		do
 			if [ -e "${FILE}" ]
@@ -70,6 +70,26 @@ case "${_ACTION}" in
 				then
 					# Disable source archives
 					sed -i "s/^deb-src/#deb-src/g" "chroot/etc/apt/sources.list.d/$(basename ${FILE} .chroot)"
+				fi
+			fi
+		done
+
+		# Adding local apt sources for deb822 format (chroot)
+		for FILE in config/archives/*.sources config/archives/*.sources.chroot
+		do
+			if [ -e "${FILE}" ]
+			then
+				sed -e "s|@DISTRIBUTION@|${LB_DISTRIBUTION_CHROOT}|g" \
+				    -e "s|@PARENT_DISTRIBUTION@|${LB_PARENT_DISTRIBUTION_CHROOT}|g" \
+				    -e "s|@ARCHIVE_AREAS@|${LB_ARCHIVE_AREAS}|g" \
+				    -e "s|@PARENT_ARCHIVE_AREAS@|${LB_PARENT_ARCHIVE_AREAS}|g" \
+				"${FILE}" > "chroot/etc/apt/sources.list.d/$(basename ${FILE} .chroot)"
+				Chroot_try_bind_path_from_deb822_list chroot "${FILE}"
+
+				if [ "${_PASS}" != "source" ] && [ "${LB_APT_SOURCE_ARCHIVES}" = "false" ]
+				then
+					# Disable source archives
+					sed -i "s/^Types: deb deb-src/Types: deb/g" "chroot/etc/apt/sources.list.d/$(basename ${FILE} .chroot)"
 				fi
 			fi
 		done
@@ -198,7 +218,12 @@ case "${_ACTION}" in
 					release . > Release" | Chroot chroot sh
 
 				# Add to sources.list.d
-				echo "deb [ trusted=yes ] file:/packages ./" > chroot/etc/apt/sources.list.d/packages.list
+				if [ "${USE_DEB822_SOURCES_CHROOT}" = "true" ]
+				then
+					Write_apt_sources_stanza 'chroot/etc/apt/sources.list.d/packages.sources' 'deb' 'file:/packages' './' 'NO_COMPONENTS' 'yes'
+				else
+					echo "deb [ trusted=yes ] file:/packages ./" > chroot/etc/apt/sources.list.d/packages.list
+				fi
 
 				# Move top-level sources away, otherwise apt always preferes it (#644148)
 				if [ -e chroot/etc/apt/sources.list ]
@@ -338,7 +363,7 @@ case "${_ACTION}" in
 		;;
 
 	remove)
-		Echo_message "Deconfiguring file /etc/apt/sources.list"
+		Echo_message "Deconfiguring apt sources"
 
 		# Acquire lock file
 		Acquire_lockfile
@@ -357,13 +382,23 @@ case "${_ACTION}" in
 		# Configure custom sources.list
 		Create_apt_sources_list binary "${_PASS}"
 
-		# Removing chroot-only apt sources
+		# Removing chroot-only apt sources in one-line format
 		for FILE in config/archives/*.list.chroot
 		do
 			if [ -e "${FILE}" ]
 			then
 				rm -f "chroot/etc/apt/sources.list.d/$(basename ${FILE} .chroot)"
 				Chroot_try_unbind_path_from_list chroot ${FILE}
+			fi
+		done
+
+		# Removing chroot-only apt sources in deb822 format
+		for FILE in config/archives/*.sources.chroot
+		do
+			if [ -e "${FILE}" ]
+			then
+				rm -f "chroot/etc/apt/sources.list.d/$(basename ${FILE} .chroot)"
+				Chroot_try_unbind_path_from_deb822_list chroot ${FILE}
 			fi
 		done
 
@@ -409,7 +444,7 @@ case "${_ACTION}" in
 			fi
 		done
 
-		# Adding local apt sources (binary)
+		# Adding local apt sources for one-line list format (binary)
 		for FILE in config/archives/*.list config/archives/*.list.binary
 		do
 			if [ -e "${FILE}" ]
@@ -425,6 +460,26 @@ case "${_ACTION}" in
 				then
 					# Disable source archives
 					sed -i "s/^deb-src/#deb-src/g" "chroot/etc/apt/sources.list.d/$(basename ${FILE} .binary)"
+				fi
+			fi
+		done
+
+		# Adding local apt sources for deb822 format (binary)
+		for FILE in config/archives/*.sources config/archives/*.sources.binary
+		do
+			if [ -e "${FILE}" ]
+			then
+				sed -e "s|@DISTRIBUTION@|${LB_DISTRIBUTION_BINARY}|g" \
+				    -e "s|@PARENT_DISTRIBUTION@|${LB_PARENT_DISTRIBUTION_BINARY}|g" \
+				    -e "s|@ARCHIVE_AREAS@|${LB_ARCHIVE_AREAS}|g" \
+				    -e "s|@PARENT_ARCHIVE_AREAS@|${LB_PARENT_ARCHIVE_AREAS}|g" \
+				"${FILE}" > "chroot/etc/apt/sources.list.d/$(basename ${FILE} .binary)"
+				Chroot_try_bind_path_from_deb822_list chroot ${FILE}
+
+				if [ "${_PASS}" != "source" ] && [ "${LB_APT_SOURCE_ARCHIVES}" = "false" ]
+				then
+					# Disable source archives
+					sed -i "s/^Types: deb deb-src/Types: deb/g" "chroot/etc/apt/sources.list.d/$(basename ${FILE} .binary)"
 				fi
 			fi
 		done
@@ -478,12 +533,21 @@ case "${_ACTION}" in
 		Chroot_try_unbind_path chroot "${LB_PARENT_MIRROR_CHROOT}"
 		Chroot_try_unbind_path chroot "${LB_MIRROR_CHROOT}"
 
-		# Unmount local apt sources (binary)
+		# Unmount local apt sources for one-line list format (binary)
 		for FILE in config/archives/*.list config/archives/*.list.binary
 		do
 			if [ -e "${FILE}" ]
 			then
 				Chroot_try_unbind_path_from_list chroot ${FILE}
+			fi
+		done
+
+		# Unmount local apt sources for deb822 format (binary)
+		for FILE in config/archives/*.sources config/archives/*.sources.binary
+		do
+			if [ -e "${FILE}" ]
+			then
+				Chroot_try_unbind_path_from_deb822_list chroot ${FILE}
 			fi
 		done
 
@@ -500,6 +564,7 @@ case "${_ACTION}" in
 
 		# Remove local package repository
 		rm -f chroot/etc/apt/sources.list.d/packages.list
+		rm -f chroot/etc/apt/sources.list.d/packages.sources
 		rm -rf chroot/packages
 		rm -f chroot/var/lib/apt/lists/_packages_._*
 

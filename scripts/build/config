@@ -986,7 +986,7 @@ LB_APT_RECOMMENDS="${LB_APT_RECOMMENDS}"
 # Set apt/aptitude security
 LB_APT_SECURE="${LB_APT_SECURE}"
 
-# Set apt/aptitude source entries in sources.list
+# Set apt/aptitude source entries in sources.list or sources.list.d/debian.sources
 LB_APT_SOURCE_ARCHIVES="${LB_APT_SOURCE_ARCHIVES}"
 
 # Control cache
