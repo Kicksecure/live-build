@@ -120,6 +120,34 @@ Prepare_config ()
 	APT_OPTIONS="${APT_OPTIONS:---yes -o Acquire::Retries=5}"
 	APTITUDE_OPTIONS="${APTITUDE_OPTIONS:---assume-yes -o Acquire::Retries=5}"
 
+	USE_DEB822_SOURCES_CHROOT="false"
+	case "${LB_PARENT_DISTRIBUTION_CHROOT}" in
+		jessie|stretch|buster|bullseye|bookworm)
+			# do nothing
+			;;
+		*)
+			USE_DEB822_SOURCES_CHROOT="true"
+			;;
+	esac
+	USE_DEB822_SOURCES_BINARY="false"
+	case "${LB_PARENT_DISTRIBUTION_BINARY}" in
+		jessie|stretch|buster|bullseye|bookworm)
+			# do nothing
+			;;
+		*)
+			USE_DEB822_SOURCES_BINARY="true"
+			;;
+	esac
+	USE_DEB822_SOURCES_DEBIAN_INSTALLER="false"
+	case "${LB_PARENT_DISTRIBUTION_DEBIAN_INSTALLER}" in
+		jessie|stretch|buster|bullseye|bookworm)
+			# do nothing
+			;;
+		*)
+			USE_DEB822_SOURCES_DEBIAN_INSTALLER="true"
+			;;
+	esac
+
 	BZIP2_OPTIONS="${BZIP2_OPTIONS:--6}"
 	GZIP_OPTIONS="${GZIP_OPTIONS:--6}"
 	LZIP_OPTIONS="${LZIP_OPTIONS:--6}"

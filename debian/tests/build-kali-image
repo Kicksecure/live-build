@@ -7,10 +7,15 @@ set -o pipefail
 echo "Acquire::Retries 5;" > /etc/apt/apt.conf.d/live-build-ci
 curl https://archive.kali.org/archive-key.asc > /etc/apt/trusted.gpg.d/kali.asc
 mkdir -p /etc/apt/sources.list.d
-echo "deb http://http.kali.org/kali kali-rolling main" > /etc/apt/sources.list.d/kali.list
+cat <<EOF > /etc/apt/sources.list.d/kali.sources
+Types: deb
+URIs: http://http.kali.org/kali
+Suites: kali-rolling
+Components: main
+EOF
 apt-get update
 apt-get install -y kali-archive-keyring
-rm -f /etc/apt/trusted.gpg.d/kali.asc /etc/apt/sources.list.d/kali.list /etc/apt/apt.conf.d/live-build-ci
+rm -f /etc/apt/trusted.gpg.d/kali.asc /etc/apt/sources.list.d/kali.sources /etc/apt/apt.conf.d/live-build-ci
 apt-get update
 
 cd "${AUTOPKGTEST_TMP}"
