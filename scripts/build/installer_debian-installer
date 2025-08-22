@@ -336,8 +336,34 @@ fi
 # USE_UDEBS_FROM -> use the same distribution as the chroot
 # ROOTCMD -> Workaround for #1058994. Fakeroot is not present in the chroot (and not required)
 export LINUX_KERNEL_ABI=\$(dpkg-query --showformat "\\\${db:Status-Abbrev} \\\${Package}\n" --show linux-image-* | awk '\$1=="ii" { c = split(\$2, a, "-"); if (c>3) { if (a[4] ~ /^[0-9]+/) { print a[3] "-" a[4] } else { print a[3] } } }' | sort | tail -1)
+# EXTRAFILES -> Place additional kernel modules and firmware in the initrd
+#               that are needed for espeakup in the installer
+# The extra files are added in two waves:
+# - Wave 1: all regular files
+# - Wave 2: all symlinks (which also includes symlinks to directories)
+export EXTRAFILES=""
+if [ "${LB_ARCHITECTURE}" = "amd64" ]
+then
+	apt-get --yes install firmware-sof-signed firmware-intel-sound
+	for file in \$(dpkg-query -L firmware-sof-signed;dpkg-query -L firmware-intel-sound;dpkg-query -L linux-image-\${LINUX_KERNEL_ABI}-amd64|egrep "/(drm|i915|drm_display_helper|drm_buddy|cec|rc-core)\.ko"); do if [ -f \${file} ]; then EXTRAFILES="\${EXTRAFILES} \${file}"; fi; done
+	for file in \$(dpkg-query -L firmware-sof-signed;dpkg-query -L firmware-intel-sound;dpkg-query -L linux-image-\${LINUX_KERNEL_ABI}-amd64|egrep "/(drm|i915|drm_display_helper|drm_buddy|cec|rc-core)\.ko"); do if [ -L \${file} ]; then EXTRAFILES="\${EXTRAFILES} \${file}"; fi; done
+fi
+rmdir /localudebs --ignore-fail-on-non-empty
+if [ -d /localudebs ]
+then
+	mv /localudebs/* /debian-installer/build/localudebs
+fi
 http_proxy=${http_proxy} MIRROR="[check-valid-until=no] ${LB_PARENT_MIRROR_CHROOT}" TARGETS="${TARGETS}" USE_UDEBS_FROM=${LB_PARENT_DISTRIBUTION_CHROOT} ROOTCMD=" " bash ./daily-build build-only
 EOF
+				mkdir -p chroot/localudebs
+				for FILE in config/packages.binary/*_"${LB_ARCHITECTURE}".udeb config/packages/*_"${LB_ARCHITECTURE}".udeb config/packages.binary/*_all.udeb config/packages/*_all.udeb
+				do
+					if [ -e "${FILE}" ]
+					then
+						cp -a "${FILE}" chroot/localudebs
+					fi
+				done
+
 				Chroot chroot "sh buildit.sh"
 				if [ ! -e chroot/debian-installer/build/dest/cdrom/"${VMLINUZ_DI}" ];
 				then
@@ -353,6 +379,7 @@ EOF
 				Prepare_installer_cache cdrom/"${VMLINUZ_GI}"
 				Prepare_installer_cache cdrom/"${INITRD_GI}"
 				rm -rf chroot/debian-installer
+				rm -fr chroot/localudebs
 				rm -f chroot/buildit.sh
 			else
 				Echo_debug "Not rebuilding the installer, using copy from cache..."
@@ -686,6 +713,7 @@ EOF
 		mkdir -p ${_FW_DEP11_DIR}
 		echo "These files help Debian Installer detect helpful firmware packages (via hw-detect)." > ${_FW_DEP11_DIR}/README.txt
 
+		_LINUX_KERNEL_PACKAGE=$(dpkg-query --showformat "\${db:Status-Abbrev} \${Package}\n" --show linux-image-* | grep "^ii" | grep -v "linux-image-${LB_ARCHITECTURE}" | sort | tail -1 | awk '{ print $2 }')
 		for _PACKAGE in ${DI_FIRMWARE_PACKAGES}
 		do
 			for _FILE in $(find ../pool -name "${_PACKAGE}_*.deb")
@@ -703,12 +731,19 @@ EOF
 					then
 						# The script generate_firmware_patterns from debian-cd manually maintains the patterns
 						# https://sources.debian.org/src/debian-cd/3.2.1/tools/generate_firmware_patterns/?hl=94#L94
-						_LINUX_KERNEL_PACKAGE=$(dpkg-query --showformat "\${db:Status-Abbrev} \${Package}\n" --show linux-image-* | grep "^ii" | grep -v "linux-image-${LB_ARCHITECTURE}" | sort | tail -1 | awk '{ print $2 }')
 						if [ -z "${_LINUX_KERNEL_PACKAGE}" ]
 						then
 							Echo_warning "Could not extract the current kernel version, skipping firmware pattern for ${_PACKAGE}"
 						else
 							for _ALIAS in $(dpkg-query -L ${_LINUX_KERNEL_PACKAGE} | egrep '(kernel/sound/soc/sof/.*\.ko(.xz)?|/snd-soc-.*sof.*\.ko(.xz)?)$'); do /usr/sbin/modinfo ${_ALIAS} | awk '/^alias:/ { print $2 }'; done | sort -u | awk '{ gsub(/[*]/, ".*", $1); printf "^%s$\n", $1 }' > ${_FW_DEP11_DIR}/${_PACKAGE}.patterns
+						fi
+					elif [ "${_PACKAGE}" = "firmware-intel-sound" ]
+					then
+						if [ -z "${_LINUX_KERNEL_PACKAGE}" ]
+						then
+							Echo_warning "Could not extract the current kernel version, skipping firmware pattern for ${_PACKAGE}"
+						else
+							for _ALIAS in $(dpkg-query -L ${_LINUX_KERNEL_PACKAGE} | egrep 'kernel/sound/soc/intel/.*\.ko(.xz)?$'); do /usr/sbin/modinfo ${_ALIAS} | awk '/^alias:/ { print $2 }'; done | sort -u | awk '{ gsub(/[*]/, ".*", $1); printf "^%s$\n", $1 }' > ${_FW_DEP11_DIR}/${_PACKAGE}.patterns
 						fi
 					elif [ -n "${_COMPONENT}" ]
 					then
@@ -718,7 +753,10 @@ EOF
 						# - Surround by ^ $
 						# - Replace * by .*
 						_COMPONENTS_DEP11_FILE=$(echo "${LB_PARENT_MIRROR_DEBIAN_INSTALLER}dists/${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION}/${_COMPONENT}/dep11/Components-${LB_ARCHITECTURE}.yml.gz" | sed -E 's|https?://||g' | sed 's|/|_|g')
-						zcat ../../chroot/var/lib/apt/lists/${_COMPONENTS_DEP11_FILE} | sed -e '/^Package: '${_PACKAGE}'$/,/^---$/p;d' | awk 'BEGIN { modalias_found = 0 } /  modaliases:/ { modalias_found = 1; next } /  [^-]/ { modalias_found = 0; } modalias_found==1 && $2 != "" { gsub(/[*]/, ".*", $2); printf "^%s$\n", $2 }' > ${_FW_DEP11_DIR}/${_PACKAGE}.patterns
+						if [ -e  ../../chroot/var/lib/apt/lists/${_COMPONENTS_DEP11_FILE} ]
+						then
+							zcat ../../chroot/var/lib/apt/lists/${_COMPONENTS_DEP11_FILE} | sed -e '/^Package: '${_PACKAGE}'$/,/^---$/p;d' | awk 'BEGIN { modalias_found = 0 } /  modaliases:/ { modalias_found = 1; next } /  [^-]/ { modalias_found = 0; } modalias_found==1 && $2 != "" { gsub(/[*]/, ".*", $2); printf "^%s$\n", $2 }' > ${_FW_DEP11_DIR}/${_PACKAGE}.patterns
+						fi
 					fi
 					if [ ! -s ${_FW_DEP11_DIR}/${_PACKAGE}.patterns ]
 					then
@@ -750,15 +788,17 @@ EOF
 	mkdir -p chroot/${UDEB_APT_TOPDIR}/${APTCONF}/sources.list.d
 	mkdir -p chroot/${UDEB_APT_TOPDIR}/${APTCONF}/apt.conf.d
 	mkdir -p chroot/${UDEB_APT_TOPDIR}/${APTCONF}/preferences.d
+	mkdir -p chroot/${UDEB_APT_TOPDIR}/${APTCONF}/trusted.gpg.d
 	mkdir -p chroot/${UDEB_APT_TOPDIR}/${APTDIR}/state/lists/partial
 	mkdir -p chroot/${UDEB_APT_TOPDIR}/${APTDIR}/cache/archives/partial
+
+	cp -L chroot/etc/apt/trusted.gpg.d/* chroot/${UDEB_APT_TOPDIR}/${APTCONF}/trusted.gpg.d
 
 	cat > chroot/${UDEB_APT_TOPDIR}/${APTCONF}/sources.list.d/udeb.sources <<-EOF
 		Types: deb
 		URIs: ${LB_PARENT_MIRROR_CHROOT}
 		Suites: ${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION}
 		Components: main/debian-installer ${LB_PARENT_ARCHIVE_AREAS}
-		Signed-by: /usr/share/keyrings/debian-archive-keyring.gpg
 		EOF
 
 	# TODO: Untested path, LB_DERIVATIVE is always false
@@ -769,7 +809,6 @@ EOF
 			URIs: ${LB_MIRROR_CHROOT}
 			Suites: ${LB_DEBIAN_INSTALLER_DISTRIBUTION}
 			Components: main/debian-installer ${LB_ARCHIVE_AREAS}
-			Signed-by: /usr/share/keyrings/debian-archive-keyring.gpg
 			EOF
 	fi
 
@@ -982,11 +1021,28 @@ EOF
 
 	if [ -n "${PATH_TO_POOL_INSIDE_LIVE_ENVIRONMENT}" ]
 	then
-		# Add to sources.list with the path that is used inside the live environment
-		# Add in the first line, to give it precedence over the online versions of the same package
-		echo "deb [trusted=yes] file:${PATH_TO_POOL_INSIDE_LIVE_ENVIRONMENT} ${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION} ${LB_PARENT_ARCHIVE_AREAS}" > sources.list
-		cat chroot/chroot/etc/apt/sources.list >> sources.list
-		mv sources.list chroot/chroot/etc/apt/sources.list
+		# Add to sources.list (or sources.list.d/debian.sources) with the path that is used inside the live environment
+		# Add in the first line or stanza, to give it precedence over the online versions of the same package
+		if [ "${USE_DEB822_SOURCES_DEBIAN_INSTALLER}" = "true" ]
+		then
+			Write_apt_sources_stanza 'debian.sources' 'deb' "file:${PATH_TO_POOL_INSIDE_LIVE_ENVIRONMENT}" "${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION}" "${LB_PARENT_ARCHIVE_AREAS}" 'yes'
+		else
+			echo "deb [trusted=yes] file:${PATH_TO_POOL_INSIDE_LIVE_ENVIRONMENT} ${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION} ${LB_PARENT_ARCHIVE_AREAS}" > sources.list
+		fi
+		if [ -f chroot/chroot/etc/apt/sources.list ];
+		then
+			cat chroot/chroot/etc/apt/sources.list >> sources.list
+			mv sources.list chroot/chroot/etc/apt/sources.list
+		fi
+		if [ -f chroot/chroot/etc/apt/sources.list.d/debian.sources ]
+		then
+			if [ -f debian.sources ]
+			then
+				echo '' >> debian.sources
+			fi
+			cat chroot/chroot/etc/apt/sources.list.d/debian.sources >> debian.sources
+			mv debian.sources chroot/chroot/etc/apt/sources.list.d/debian.sources
+		fi
 		VAR_LIB_APT_LISTS_FILENAME=$(echo "${PATH_TO_POOL_INSIDE_LIVE_ENVIRONMENT}/dists/${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION}/Release" | sed 's|/|_|g')
 		cp -a binary/dists/${LB_PARENT_DEBIAN_INSTALLER_DISTRIBUTION}/Release chroot/chroot/var/lib/apt/lists/${VAR_LIB_APT_LISTS_FILENAME}
 	fi

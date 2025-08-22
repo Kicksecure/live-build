@@ -157,11 +157,17 @@ function test_snapshot_with_mirror_bootstrap() {
 	# Slight speedup: --zsync, --firmware-chroot, --cache
 	lb config --distribution unstable --zsync false --firmware-chroot false --cache false --mirror-bootstrap http://snapshot.debian.org/archive/debian/20240701T000000Z/ --mirror-binary http://deb.debian.org/debian/
 	# Insider knowledge of live-build:
-	#   Add '-o Acquire::Check-Valid-Until=false', to allow for rebuilds of older timestamps 
+	#   Add '-o Acquire::Check-Valid-Until=false', to allow for rebuilds of older timestamps
 	sed -i -e '/^APT_OPTIONS=/s/--yes/--yes -o Acquire::Check-Valid-Until=false/' config/common
 	build_image
 	mountSquashfs
-	assertTrue "Sources.list mentions deb.d.o" "grep -q 'http://deb.debian.org/debian' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertTrue "Sources.list mentions deb.d.o" "grep -q 'http://deb.debian.org/debian' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertTrue "Debian.sources mentions deb.d.o" "grep -q 'http://deb.debian.org/debian' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	assertTrue "Sources list meta info should be present" "[ -e squashfs/var/lib/apt/lists/deb\.debian\.org_debian_dists_unstable_main_binary-amd64_Packages ]"
 	assertTrue "The kernel from the snapshot is used" "grep -q '^linux-image-6\.9\.7-amd64' chroot.packages.install"
 	assertTrue "The kernel from the snapshot will be booted" "[ -e squashfs/boot/vmlinuz-6.9.7-amd64 ]"
@@ -182,7 +188,13 @@ function test_preexisting_package_inclusion_chroot() {
 	assertFalse "Main package stays after installation" "grep -q '^hwdata' iso/live/filesystem.packages-remove"
 	assertFalse "Dependency package stays after installation" "grep -q '^pci\.ids' iso/live/filesystem.packages-remove"
 	assertFalse "No package pool should be generated" "[ -e iso/pool ]"
-	assertFalse "Package pool is not listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertFalse "Package pool is not listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertFalse "Package pool is not listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	unmountSquashfs
 }
 
@@ -200,7 +212,13 @@ function test_preexisting_package_inclusion_chroot_live() {
 	assertTrue "Main package will be removed after installation" "grep -q '^hwdata' iso/live/filesystem.packages-remove"
 	assertTrue "Dependency package will be removed after installation" "grep -q '^pci\.ids' iso/live/filesystem.packages-remove"
 	assertFalse "No package pool should be generated" "[ -e iso/pool ]"
-	assertFalse "Package pool is not listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertFalse "Package pool is not listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertFalse "Package pool is not listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	unmountSquashfs
 }
 
@@ -219,7 +237,13 @@ function test_preexisting_package_inclusion_chroot_install() {
 	assertFalse "Main package stays after installation" "grep -q '^hwdata' iso/live/filesystem.packages-remove"
 	assertFalse "Dependency package stays after installation" "grep -q '^pci\.ids' iso/live/filesystem.packages-remove"
 	assertFalse "No package pool should be generated" "[ -e iso/pool ]"
-	assertFalse "Package pool is not listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertFalse "Package pool is not listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertFalse "Package pool is not listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	unmountSquashfs
 }
 
@@ -238,7 +262,13 @@ function test_preexisting_package_inclusion_unspecified_chroot_or_binary() {
 	assertFalse "Dependency package stays after installation" "grep -q '^pci\.ids' iso/live/filesystem.packages-remove"
 	assertTrue "Main package should be in the pool" "[ -e iso/pool/main/h/hwdata/hwdata_*_all.deb ]"
 	assertTrue "Dependency package should be in the pool" "[ -e iso/pool/main/p/pci.ids/pci.ids_*_all.deb ]"
-	assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	assertTrue "Sources list meta info should be present: Release" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_Release ]"
 	assertTrue "Sources list meta info should be present: Packages" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_main_binary-amd64_Packages ]"
 	unmountSquashfs
@@ -259,7 +289,13 @@ function test_preexisting_package_inclusion_binary() {
 	assertFalse "Dependency package stays after installation" "grep -q '^pci\.ids' iso/live/filesystem.packages-remove"
 	assertTrue "Main package should be in the pool" "[ -e iso/pool/main/h/hwdata/hwdata_*_all.deb ]"
 	assertTrue "Dependency package should be in the pool" "[ -e iso/pool/main/p/pci.ids/pci.ids_*_all.deb ]"
-	assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	assertTrue "Sources list meta info should be present: Release" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_Release ]"
 	assertTrue "Sources list meta info should be present: Packages" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_main_binary-amd64_Packages ]"
 	unmountSquashfs
@@ -298,7 +334,13 @@ function test_direct_inclusion_of_deb_binary() {
 	mountSquashfs
 	assertTrue "Main package should be in the pool" "[ -e iso/pool/main/l/live-testpackage-config-packages-binary-main/live-testpackage-config-packages-binary-main_1.0_all.deb ]"
 	assertTrue "Dependency package should be in the pool" "[ -e iso/pool/main/l/live-testpackage-config-packages-binary-dependency/live-testpackage-config-packages-binary-dependency_1.0_all.deb ]"
-	assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	assertTrue "Sources list meta info should be present: Release" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_Release ]"
 	assertTrue "Sources list meta info should be present: Packages" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_main_binary-amd64_Packages ]"
 	unmountSquashfs
@@ -323,6 +365,7 @@ function prepare_remote_repository() {
 	local SCENARIO=${1}
 	local EXTENSION=${2}
 
+  # TODO: How to use a deb822 sources list here when supported?
 	cat << EOF > config/archives/${SCENARIO}.list${EXTENSION}
 deb [signed-by=/etc/apt/trusted.gpg.d/ubuntu-archive-keyring.gpg.key${EXTENSION}.gpg] http://archive.ubuntu.com/ubuntu noble main
 EOF
@@ -350,7 +393,7 @@ function test_remote_repository_unspecified_chroot_or_binary() {
 	assertTrue "Package is installed (live)" "grep -q '^casper' chroot.packages.live"
 
 	mountSquashfs
-	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.list ]"
+	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.list ] || [ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.sources ]"
 	assertTrue "Sources list meta info should be present" "[ -e squashfs/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_main_binary-amd64_Packages ]"
 	assertTrue "Package should be in the pool" "find iso | grep 'iso/pool/main/c/casper/casper_.*_amd64\.deb'"
 	assertTrue "Signing key should be present" "[ -e squashfs/etc/apt/trusted.gpg.d/ubuntu-archive-keyring.gpg.key.gpg ]"
@@ -367,7 +410,7 @@ function test_remote_repository_chroot() {
 	assertTrue "Package is installed (live)" "grep -q '^casper' chroot.packages.live"
 
 	mountSquashfs
-	assertFalse "Sources list should not be present" "[ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.list ]"
+	assertFalse "Sources list should not be present" "[ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.list ] || [ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.sources ]"
 	assertFalse "Sources list meta info should not be present" "[ -e squashfs/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_main_binary-amd64_Packages ]"
 	assertFalse "Signing key should not be present" "[ -e squashfs/etc/apt/trusted.gpg.d/ubuntu-archive-keyring.gpg.key.chroot.gpg ]"
 	assertFalse "Pinning preference should not be present" "[ -e squashfs/etc/apt/preferences.d/${SCENARIO}.pref ]"
@@ -383,7 +426,7 @@ function test_remote_repository_binary() {
 	assertFalse "Package is not installed (live)" "grep -q '^casper' chroot.packages.live"
 
 	mountSquashfs
-	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.list ]"
+	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.list ] || [ -e squashfs/etc/apt/sources.list.d/${SCENARIO}.sources ]"
 	assertTrue "Sources list meta info should be present" "[ -e squashfs/var/lib/apt/lists/archive.ubuntu.com_ubuntu_dists_noble_main_binary-amd64_Packages ]"
 	assertTrue "Package should be in the pool" "find iso | grep 'iso/pool/main/c/casper/casper_.*_amd64\.deb'"
 	assertTrue "Signing key should be present" "[ -e squashfs/etc/apt/trusted.gpg.d/ubuntu-archive-keyring.gpg.key.binary.gpg ]"
@@ -399,6 +442,7 @@ function prepare_local_repository() {
 
 	create_repository ${SCENARIO}
 	gpg --armor --output config/archives/testrepository-${SCENARIO}.gpg.key${EXTENSION} --export-options export-minimal --export ${SIGNING_KEY}
+  # TODO: How to use a deb822 sources list here when supported?
 	cat << EOF > config/archives/my_repro-${SCENARIO}.list${EXTENSION}
 deb [signed-by=/etc/apt/trusted.gpg.d/testrepository-${SCENARIO}.gpg.key${EXTENSION}.asc] file://$(pwd)/testrepository-${SCENARIO} nondebian mymain
 EOF
@@ -418,10 +462,16 @@ function test_local_repository_unspecified_chroot_or_binary() {
 	assertTrue "Dependency package is installed (live)" "grep -q '^live-testpackage-${SCENARIO}-dependency' chroot.packages.live"
 
 	mountSquashfs
-	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.list ]"
+	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.list ] || [ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.sources ]"
 	assertTrue "Main package should be in the pool" "[ -e iso/pool/main/l/live-testpackage-${SCENARIO}-main/live-testpackage-${SCENARIO}-main_1.0_all.deb ]"
 	assertTrue "Dependency package should be in the pool" "[ -e iso/pool/main/l/live-testpackage-${SCENARIO}-dependency/live-testpackage-${SCENARIO}-dependency_1.0_all.deb ]"
-	assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	assertTrue "Sources list meta info should be present: Release" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_Release ]"
 	assertTrue "Sources list meta info should be present: Packages" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_main_binary-amd64_Packages ]"
 	assertTrue "Signing key should be present" "[ -e squashfs/etc/apt/trusted.gpg.d/testrepository-${SCENARIO}.gpg.key.asc ]"
@@ -442,7 +492,7 @@ function test_local_repository_chroot() {
 	assertTrue "Dependency package is installed (live)" "grep -q '^live-testpackage-${SCENARIO}-dependency' chroot.packages.live"
 
 	mountSquashfs
-	assertFalse "Sources list should not be present" "[ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.list ]"
+	assertFalse "Sources list should not be present" "[ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.list ] || [ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.sources ]"
 	assertFalse "Sources list meta info should not be present" "find squashfs/var/lib/apt/lists | grep -q 'squashfs/var/lib/apt/lists/_*_testrepository-${SCENARIO}-'"
 	assertFalse "Signing key should not be present" "[ -e squashfs/etc/apt/trusted.gpg.d/testrepository-${SCENARIO}.gpg.key.chroot.asc ]"
 	unmountSquashfs
@@ -461,10 +511,16 @@ function test_local_repository_binary() {
 	assertFalse "Main package is not installed (live)" "grep -q '^live-testpackage-${SCENARIO}-main' chroot.packages.live"
 	assertFalse "Dependency package is not installed (live)" "grep -q '^live-testpackage-${SCENARIO}-dependency' chroot.packages.live"
 	mountSquashfs
-	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.list ]"
+	assertTrue "Sources list should be present" "[ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.list ] || [ -e squashfs/etc/apt/sources.list.d/my_repro-${SCENARIO}.sources ]"
 	assertTrue "Main package should be in the pool" "[ -e iso/pool/main/l/live-testpackage-${SCENARIO}-main/live-testpackage-${SCENARIO}-main_1.0_all.deb ]"
 	assertTrue "Dependency package should be in the pool" "[ -e iso/pool/main/l/live-testpackage-${SCENARIO}-dependency/live-testpackage-${SCENARIO}-dependency_1.0_all.deb ]"
-	assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	assertTrue "One of sources.list or debian.sources exists" "test -f squashfs/etc/apt/sources.list || test -f squashfs/etc/apt/sources.list.d/debian.sources"
+	if [ -f squashfs/etc/apt/sources.list ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list"
+	fi
+	if [ -f squashfs/etc/apt/sources.list.d/debian.sources ]; then
+		assertTrue "Package pool is listed in /etc/apt/sources.list.d/debian.sources" "grep -q 'file:/run/live/medium' squashfs/etc/apt/sources.list.d/debian.sources"
+	fi
 	assertTrue "Sources list meta info should be present: Release" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_Release ]"
 	assertTrue "Sources list meta info should be present: Packages" "[ -e squashfs/var/lib/apt/lists/_run_live_medium_dists_unstable_main_binary-amd64_Packages ]"
 	assertTrue "Signing key should be present" "[ -e squashfs/etc/apt/trusted.gpg.d/testrepository-${SCENARIO}.gpg.key.binary.asc ]"
@@ -483,6 +539,7 @@ function test_embedded_repository() {
 	cp -a testrepository-config-opt-extra-repo/pool/* config/includes.chroot_before_packages/opt/extrarepo/pool
 
 	# Note it uses '.list', because the repository should be functional after the chroot is sealed
+  # TODO: How to use a deb822 sources list here when supported?
 	cat << EOF > config/archives/my_repro-config-opt-extra-repo.list
 deb [trusted=yes] file:///opt/extrarepo nondebian mymain
 EOF

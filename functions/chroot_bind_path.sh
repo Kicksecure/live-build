@@ -82,3 +82,28 @@ Chroot_try_unbind_path_from_list ()
 	Chroot_try_unbind_path ${CHROOT} ${URI}
 }
 
+# Try to bind the first URI from a sources.list(5) file in deb822 format
+#
+# $1 = directory of the chroot
+# $2 = file in sources.list(5) deb822 format
+Chroot_try_bind_path_from_deb822_list ()
+{
+	local CHROOT
+	local URI
+	local FILE
+	CHROOT="${1}"
+	FILE="${2}"
+	URI=$(grep '^URIs:' "${FILE}" | head -1 | cut -d' ' -f2)
+	Chroot_try_bind_path ${CHROOT} ${URI}
+}
+
+Chroot_try_unbind_path_from_deb822_list ()
+{
+	local CHROOT
+	local URI
+	local FILE
+	CHROOT="${1}"
+	FILE="${2}"
+	URI=$(grep '^URIs:' "${FILE}" | head -1 | cut -d' ' -f2)
+	Chroot_try_unbind_path ${CHROOT} ${URI}
+}
