@@ -4,3 +4,12 @@
 ## See the file COPYING for copying conditions.
 
 make_use_git_describe_for_version=true
+
+## live-build is a dh-packaged repo: its source lives under share/,
+## functions/, data/, frontend/ and is mapped into the .deb by
+## debian/rules, with no native-FHS files (bin/ etc/ usr/ ...) in the
+## source tree. genmkfile's make_installcheck diffs such native-FHS files
+## against what was installed, so for live-build it matches nothing and
+## aborts with "Nothing has been copied". The .deb itself builds and
+## installs fine; skip the native install-check that does not apply here.
+make_use_installcheck=false
